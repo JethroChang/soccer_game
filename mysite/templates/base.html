@@ -1,0 +1,41 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Soccer Game - 網頁版 2D 足球對戰遊戲{% endblock %}</title>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Global CSS -->
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="site-nav">
+        <a href="{% url 'game.home' %}" class="brand">
+            <span class="brand-icon">⚽</span>
+            <span class="brand-text">SOCCER<span>ARENA</span></span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="{% url 'game.home' %}" class="nav-link {% if request.resolver_match.url_name == 'game.home' %}active{% endif %}">遊戲戰場</a></li>
+            <li><a href="{% url 'game.leaderboard' %}" class="nav-link {% if request.resolver_match.url_name == 'game.leaderboard' %}active{% endif %}">賽事戰績</a></li>
+            <li><a href="/docs/index.html" target="_blank" class="nav-doc-link">📖 系統文檔中心</a></li>
+        </ul>
+    </nav>
+
+    <main class="main-wrapper">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <p>⚽ Soccer Game Web Arena &copy; 2026 | 架構完全對齊 stock_dash 規範</p>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

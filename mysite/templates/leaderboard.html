@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}賽事戰績與排行榜 - Soccer Game{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 0 auto; width: 100%;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h1 style="font-size: 2rem; color: var(--accent-cyan); margin-bottom: 0.35rem;">🏆 賽事榮譽與戰績中心</h1>
+            <p style="color: var(--text-muted);">查看全場歷史賽事紀錄、球員排行榜與連勝戰績</p>
+        </div>
+        <a href="{% url 'game.home' %}" class="btn btn-emerald">⚽ 立即進入戰場</a>
+    </div>
+
+    <!-- 排行榜區塊 -->
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 1.5rem; margin-bottom: 2.5rem;">
+        <h2 style="font-size: 1.3rem; color: var(--accent-emerald); margin-bottom: 1.25rem;">🥇 玩家名人堂排行榜</h2>
+        
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border-subtle); color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase;">
+                    <th style="padding: 0.75rem 1rem;">排名</th>
+                    <th style="padding: 0.75rem 1rem;">玩家姓名</th>
+                    <th style="padding: 0.75rem 1rem;">勝率</th>
+                    <th style="padding: 0.75rem 1rem;">總場次</th>
+                    <th style="padding: 0.75rem 1rem;">勝 / 平 / 負</th>
+                    <th style="padding: 0.75rem 1rem;">總進球</th>
+                    <th style="padding: 0.75rem 1rem;">最高連勝</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in leaderboard %}
+                <tr style="border-bottom: 1px solid rgba(55, 65, 81, 0.5); font-size: 0.95rem;">
+                    <td style="padding: 0.85rem 1rem; font-weight: 800; color: var(--accent-amber);">#{{ forloop.counter }}</td>
+                    <td style="padding: 0.85rem 1rem; font-weight: 700; color: var(--text-main);">{{ entry.player_name }}</td>
+                    <td style="padding: 0.85rem 1rem; font-weight: 800; color: var(--accent-cyan);">{{ entry.win_rate }}%</td>
+                    <td style="padding: 0.85rem 1rem; color: var(--text-muted);">{{ entry.total_matches }}</td>
+                    <td style="padding: 0.85rem 1rem; color: var(--text-muted);">{{ entry.wins }} / {{ entry.draws }} / {{ entry.losses }}</td>
+                    <td style="padding: 0.85rem 1rem; font-weight: 700; color: var(--accent-emerald);">{{ entry.total_goals_scored }}</td>
+                    <td style="padding: 0.85rem 1rem; font-weight: 800; color: var(--accent-amber);">{{ entry.highest_win_streak }} ✕</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                        尚無任何排行榜數據，趕快進入戰場贏得首場比賽吧！
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 近期賽事紀錄清單 -->
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 1.5rem;">
+        <h2 style="font-size: 1.3rem; color: var(--accent-cyan); margin-bottom: 1.25rem;">📜 最近比賽紀錄 (Recent Matches)</h2>
+        
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border-subtle); color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase;">
+                    <th style="padding: 0.75rem 1rem;">比賽時間</th>
+                    <th style="padding: 0.75rem 1rem;">比分 (主隊 : 客隊)</th>
+                    <th style="padding: 0.75rem 1rem;">結果</th>
+                    <th style="padding: 0.75rem 1rem;">難度</th>
+                    <th style="padding: 0.75rem 1rem;">射門 (正/總)</th>
+                    <th style="padding: 0.75rem 1rem;">控球率</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in matches %}
+                <tr style="border-bottom: 1px solid rgba(55, 65, 81, 0.5); font-size: 0.95rem;">
+                    <td style="padding: 0.85rem 1rem; color: var(--text-muted); font-family: monospace;">{{ m.created_at|date:"Y-m-d H:i" }}</td>
+                    <td style="padding: 0.85rem 1rem; font-weight: 900; font-size: 1.1rem; color: var(--text-main);">
+                        {{ m.player_score }} - {{ m.opponent_score }}
+                    </td>
+                    <td style="padding: 0.85rem 1rem;">
+                        {% if m.result == 'WIN' %}
+                        <span style="background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); border: 1px solid var(--accent-emerald); padding: 0.2rem 0.6rem; border-radius: 4px; font-weight: 700; font-size: 0.8rem;">勝利 WIN</span>
+                        {% elif m.result == 'LOSS' %}
+                        <span style="background: rgba(244, 63, 94, 0.2); color: var(--accent-rose); border: 1px solid var(--accent-rose); padding: 0.2rem 0.6rem; border-radius: 4px; font-weight: 700; font-size: 0.8rem;">落敗 LOSS</span>
+                        {% else %}
+                        <span style="background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); border: 1px solid var(--accent-amber); padding: 0.2rem 0.6rem; border-radius: 4px; font-weight: 700; font-size: 0.8rem;">平局 DRAW</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 0.85rem 1rem; color: var(--text-muted);">{{ m.get_difficulty_display }}</td>
+                    <td style="padding: 0.85rem 1rem; color: var(--text-main); font-family: monospace;">{{ m.shots_on_target }} / {{ m.shots_taken }}</td>
+                    <td style="padding: 0.85rem 1rem; font-weight: 700; color: var(--accent-cyan);">{{ m.possession_rate }}%</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                        目前尚無對戰歷史紀錄。
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,415 @@
+/* ==========================================================================
+   Soccer Game - Arena & HUD Stylesheet (game.css)
+   ========================================================================== */
+
+.game-page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+/* ==========================================================================
+   Top Match Header / Scoreboard HUD
+   ========================================================================== */
+.scoreboard-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 14px;
+  padding: 0.75rem 2rem;
+  width: 100%;
+  max-width: 960px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(56, 189, 248, 0.1);
+  user-select: none;
+}
+
+.team-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.team-flag {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1rem;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.team-flag.home {
+  background: radial-gradient(circle, #38bdf8 0%, #0284c7 100%);
+  color: #0f172a;
+}
+
+.team-flag.away {
+  background: radial-gradient(circle, #f43f5e 0%, #be123c 100%);
+  color: #ffffff;
+}
+
+.team-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.score-display {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.score-num {
+  font-size: 2.4rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+}
+
+.score-divider {
+  font-size: 1.8rem;
+  color: var(--text-dim);
+  font-weight: 300;
+}
+
+.timer-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 0.35rem 1rem;
+}
+
+.timer-label {
+  font-size: 0.65rem;
+  color: var(--accent-emerald);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.timer-val {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   Pitch Arena Frame & Canvas
+   ========================================================================== */
+.pitch-arena-wrapper {
+  position: relative;
+  width: 960px;
+  height: 600px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 24px rgba(16, 185, 129, 0.15);
+  border: 2px solid rgba(56, 189, 248, 0.3);
+  background: #0d2818;
+}
+
+#gameCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: #143621;
+}
+
+/* ==========================================================================
+   Dynamic In-Game Overlays (Goal Banner, Pause, Game Over)
+   ========================================================================== */
+.overlay-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 15, 25, 0.82);
+  backdrop-filter: blur(8px);
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.overlay-screen.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* GOAL Celebration Banner */
+.goal-banner {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 60;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+}
+
+.goal-banner.show {
+  transform: translate(-50%, -50%) scale(1.1);
+  opacity: 1;
+}
+
+.goal-banner-text {
+  font-size: 5rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: #facc15;
+  text-shadow: 0 0 30px rgba(250, 204, 21, 0.8), 0 0 60px rgba(245, 158, 11, 0.5);
+  animation: pulse-glow 0.8s infinite alternate;
+}
+
+.goal-banner-sub {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 0.25rem 1.25rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+@keyframes pulse-glow {
+  from { filter: drop-shadow(0 0 10px #facc15); }
+  to { filter: drop-shadow(0 0 25px #fbbf24); }
+}
+
+/* Match Over Card */
+.match-over-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-accent);
+  border-radius: 16px;
+  padding: 2.25rem 3rem;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+  max-width: 520px;
+  width: 90%;
+  animation: pop-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes pop-up {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.match-over-title {
+  font-size: 2.2rem;
+  font-weight: 900;
+  margin-bottom: 0.5rem;
+}
+
+.match-over-title.win {
+  color: var(--accent-emerald);
+  text-shadow: 0 0 20px var(--accent-emerald-glow);
+}
+
+.match-over-title.loss {
+  color: var(--accent-rose);
+  text-shadow: 0 0 20px var(--accent-rose-glow);
+}
+
+.match-over-title.draw {
+  color: var(--accent-amber);
+}
+
+.match-stats-table {
+  width: 100%;
+  margin: 1.5rem 0;
+  font-size: 0.95rem;
+  border-collapse: collapse;
+}
+
+.match-stats-table tr {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.match-stats-table td {
+  padding: 0.6rem 0.5rem;
+}
+
+.match-stats-label {
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.match-stats-val {
+  font-weight: 700;
+  font-family: monospace;
+}
+
+/* ==========================================================================
+   Bottom Action Bars & Player Meters (Stamina, Power)
+   ========================================================================== */
+.hud-meters-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 960px;
+  gap: 1.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+}
+
+.meter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.meter-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  min-width: 75px;
+}
+
+.meter-track {
+  flex: 1;
+  height: 12px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.meter-fill-stamina {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #0284c7 0%, #38bdf8 100%);
+  transition: width 0.05s linear;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+}
+
+.meter-fill-power {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #f59e0b 0%, #ef4444 100%);
+  transition: width 0.03s linear;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+
+/* ==========================================================================
+   Control Bar & Buttons
+   ========================================================================== */
+.controls-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 960px;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.btn-primary {
+  background: var(--accent-cyan);
+  color: #0b0f19;
+  box-shadow: 0 4px 12px var(--accent-cyan-glow);
+}
+
+.btn-primary:hover {
+  background: #7dd3fc;
+  transform: translateY(-2px);
+}
+
+.btn-emerald {
+  background: var(--accent-emerald);
+  color: #064e3b;
+  box-shadow: 0 4px 12px var(--accent-emerald-glow);
+}
+
+.btn-emerald:hover {
+  background: #34d399;
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-subtle);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent-cyan);
+}
+
+.btn-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Quick Control Guide Banner */
+.quick-help-banner {
+  background: rgba(31, 41, 55, 0.5);
+  border: 1px dashed var(--border-subtle);
+  border-radius: 10px;
+  padding: 0.75rem 1.25rem;
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.key-tag {
+  background: #0f172a;
+  border: 1px solid #475569;
+  border-radius: 4px;
+  padding: 0.15rem 0.4rem;
+  color: var(--accent-amber);
+  font-family: monospace;
+  font-weight: 700;
+  margin: 0 0.15rem;
+}
