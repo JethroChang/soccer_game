@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>足球遊戲核心規格與架構 - 開發說明文件</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-primary: #38bdf8;
+            --accent-green: #4ade80;
+            --accent-amber: #fbbf24;
+            --accent-purple: #c084fc;
+            --accent-rose: #f43f5e;
+            --code-bg: #0b1120;
+            --callout-info: rgba(56, 189, 248, 0.1);
+            --callout-info-border: #38bdf8;
+            --callout-warn: rgba(251, 191, 36, 0.1);
+            --callout-warn-border: #fbbf24;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.7;
+            padding: 2rem 1rem;
+        }
+
+        .container { max-width: 1050px; margin: 0 auto; }
+
+        .nav-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--accent-primary);
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            transition: opacity 0.2s;
+        }
+        .nav-back:hover { opacity: 0.8; }
+
+        header {
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        h1 { font-size: 2.2rem; color: var(--accent-primary); margin-bottom: 0.5rem; }
+        .meta { color: var(--text-muted); font-size: 0.95rem; }
+
+        .toc {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .toc h3 { color: var(--accent-primary); margin-bottom: 0.75rem; font-size: 1.1rem; }
+        .toc ul { list-style: none; padding-left: 0; }
+        .toc li { margin-bottom: 0.4rem; }
+        .toc a { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+        .toc a:hover { color: var(--accent-primary); }
+
+        section { margin-bottom: 3rem; }
+        h2 {
+            font-size: 1.5rem;
+            color: var(--accent-green);
+            border-bottom: 1px solid rgba(74, 222, 128, 0.2);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        h3 { font-size: 1.2rem; color: var(--accent-amber); margin: 1.25rem 0 0.5rem 0; }
+
+        p { margin-bottom: 1rem; color: #cbd5e1; }
+
+        .callout {
+            background-color: var(--callout-info);
+            border-left: 4px solid var(--callout-info-border);
+            padding: 1rem 1.25rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .callout.warn {
+            background-color: var(--callout-warn);
+            border-left: 4px solid var(--callout-warn-border);
+        }
+
+        .callout h4 { margin-bottom: 0.4rem; color: var(--text-main); }
+        .callout p { margin-bottom: 0; font-size: 0.95rem; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+        }
+
+        th, td {
+            padding: 0.85rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        th { background-color: rgba(15, 23, 42, 0.8); color: var(--accent-primary); font-weight: 600; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background-color: rgba(255, 255, 255, 0.02); }
+
+        code {
+            background-color: var(--code-bg);
+            color: var(--accent-amber);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: Consolas, monospace;
+            font-size: 0.9em;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 1.25rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border: none;
+            color: #e2e8f0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.25rem;
+            margin: 1rem 0;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 1.25rem;
+        }
+
+        .feature-card h4 {
+            color: var(--accent-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        footer {
+            border-top: 1px solid var(--card-border);
+            padding-top: 1.5rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="nav-back">&larr; 返回文檔中心首頁</a>
+        
+        <header>
+            <h1>⚽ 足球遊戲核心規格與架構說明文件</h1>
+            <div class="meta">對齊 stock_dash 專案架構 | 最後更新: 2026-10-11 | 版本: v1.0.0</div>
+        </header>
+
+        <nav class="toc">
+            <h3>目錄導覽</h3>
+            <ul>
+                <li><a href="#overview">1. 系統概述與設計哲學</a></li>
+                <li><a href="#physics">2. 物理引擎與運算規範 (Ball & Player Physics)</a></li>
+                <li><a href="#ai">3. 電腦對手與門將 AI 決策邏輯</a></li>
+                <li><a href="#rules">4. 賽事機制、慢動作重播與音效</a></li>
+                <li><a href="#architecture">5. 網站系統架構與 Django 後端 API</a></li>
+                <li><a href="#controls">6. 按鍵操控對照表</a></li>
+                <li><a href="#roadmap">7. 分階段開發與驗收里程碑</a></li>
+            </ul>
+        </nav>
+
+        <section id="overview">
+            <h2>1. 系統概述與設計哲學</h2>
+            <p>
+                本專案在 <code>soccer_game/</code> 資料夾內打造一款輕量、高流暢度、具備物理回饋與電競視覺美感的網頁版 2D 足球對戰遊戲。
+                整體專案全面參考 <code>stock_dash</code> 的工程架構規範：
+            </p>
+            <div class="grid-2">
+                <div class="feature-card">
+                    <h4>極致效能與輕量</h4>
+                    <p>前端核心採用 HTML5 Canvas 2D 與純原生 JavaScript (ES6 Modules)，拒絕繁重 Node 構建與框架套件包袱，啟動即享穩定 60 FPS。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Django 後端與資料持久化</h4>
+                    <p>比照 <code>stock_dash/mysite/</code> 架構，使用 Django 提供視圖、路由與 SQLite 儲存比賽戰績、勝率統計及排行榜 API。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Web Audio 原生合成</h4>
+                    <p>無需額外下載大型 MP3/WAV 音效檔案，直接透過瀏覽器振盪器合成逼真的踢球、中柱、哨音與進球歡呼。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>獨立 Dark Mode 文檔體系</h4>
+                    <p>所有規格與開發邏輯一律維護為高可讀性的深色科技風 HTML 文件，隨時點開即可查閱。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="physics">
+            <h2>2. 物理引擎與運算規範</h2>
+            <p>
+                遊戲的核心運動學包含真實的二維剛體碰撞、草皮滾動摩擦力衰減、彈性反彈與門柱圓角碰撞。
+            </p>
+
+            <h3>2.1 物理參數對照表</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>參數名稱</th>
+                        <th>設定值</th>
+                        <th>公式與運動學邏輯</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>足球摩擦力 (Friction)</strong></td>
+                        <td><code>0.985</code></td>
+                        <td>每幀速度衰減：<code>vx *= 0.985; vy *= 0.985;</code>，平滑減速停球</td>
+                    </tr>
+                    <tr>
+                        <td><strong>邊界反彈係數 (Restitution)</strong></td>
+                        <td><code>0.82</code></td>
+                        <td>邊界碰撞：<code>vx = -vx * 0.82;</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>門柱反彈 (Post Bounce)</strong></td>
+                        <td><code>0.90</code></td>
+                        <td>四個門柱圓柱碰撞箱彈射，帶出經典撞柱清脆角度與聲音</td>
+                    </tr>
+                    <tr>
+                        <td><strong>球員加速度 / 衝刺極速</strong></td>
+                        <td><code>3.8 ~ 5.5 px/f</code></td>
+                        <td>方向鍵控制跑動，按住衝刺消耗體力 (Stamina Bar) 加速</td>
+                    </tr>
+                    <tr>
+                        <td><strong>蓄力射門速度</strong></td>
+                        <td><code>8.0 ~ 18.0 px/f</code></td>
+                        <td>按住射門鍵蓄力 0~100%，依力量條向量噴射</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="callout">
+                <h4>⚽ 帶球磁吸與搶斷機制</h4>
+                <p>當球員中心與足球距離小於 26px 時自動吸附於行進方向前方 18px 處。對手球員可施展滑鏟 (Tackle)，短暫使持球者失去球權並踢飛足球。</p>
+            </div>
+        </section>
+
+        <section id="ai">
+            <h2>3. 電腦對手與門將 AI 決策邏輯</h2>
+            <p>
+                AI 採用分層狀態機 (FSM)，使單人模式具備挑戰性且表現自然：
+            </p>
+            <ul>
+                <li><strong>專職門將 (Goalkeeper)</strong>：在球門兩側立柱與足球連線形成的夾角平分線上保持動態站位；當足球逼近禁區且具射門威脅時，啟動側向飛撲與大腳解圍。</li>
+                <li><strong>對手球員 (Outfield Player)</strong>：
+                    <ul>
+                        <li><em>逼搶攔截 (Chasing)</em>：預判足球前進截點，加速攔截防守。</li>
+                        <li><em>進攻帶球 (Attacking)</em>：奪球後主動朝對方球門推進，繞開玩家防守正面。</li>
+                        <li><em>瞄準射門 (Shooting)</em>：距離球門適當角度時，自動瞄準遠角空檔蓄力射門。</li>
+                    </ul>
+                </li>
+            </ul>
+        </section>
+
+        <section id="rules">
+            <h2>4. 賽事機制、慢動作重播與音效</h2>
+            <h3>4.1 比賽流程</h3>
+            <p>
+                標準比賽時長為 <strong>90 秒</strong>真實時間（右上角倒數計時）。當足球穿過球門線時：
+            </p>
+            <ol style="margin-left: 1.5rem; color: #cbd5e1; margin-bottom: 1rem;">
+                <li>即刻觸發 15 幀畫面震動 (Screen Shake) 與 0.3x 慢動作進球重播。</li>
+                <li>螢幕彈出立體「GOAL!!」震撼橫幅與多彩紙屑粒子 (Confetti)。</li>
+                <li>Web Audio API 播放進球哨聲與觀眾歡呼音效。</li>
+                <li>進球方比分 +1，倒數 1.5 秒後雙方重置回中圈開球。</li>
+            </ol>
+        </section>
+
+        <section id="architecture">
+            <h2>5. 網站系統架構與 Django 後端 API</h2>
+            <p>
+                比照 <code>stock_dash</code> 的組織方式，路由與後端 API 均收斂於 <code>mysite/</code>：
+            </p>
+            <pre><code># mysite/game/urls.py
+urlpatterns = [
+    path('', views.game_home, name='game.home'),
+    path('leaderboard/', views.leaderboard_page, name='game.leaderboard'),
+    # AJAX 端點對齊 stock_dash 習慣
+    path('ajax/save_match/', views.ajax_save_match, name='game.ajax.save_match'),
+    path('ajax/leaderboard/', views.ajax_leaderboard, name='game.ajax.leaderboard'),
+    path('ajax/stats/', views.ajax_stats, name='game.ajax.stats'),
+]</code></pre>
+
+            <div class="callout warn">
+                <h4>戰績資料庫模型 (SQLite)</h4>
+                <p>記錄每場比賽之雙方進球、勝負結果、難度、射門數、控球率以及玩家生涯最高連勝紀錄。</p>
+            </div>
+        </section>
+
+        <section id="controls">
+            <h2>6. 按鍵操控對照表</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>操控項目</th>
+                        <th>Player 1 (主隊 / 單人)</th>
+                        <th>Player 2 (客隊 / 本地雙人)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>移動跑動</td>
+                        <td><code>W / A / S / D</code> 或 <code>方向鍵</code></td>
+                        <td><code>I / J / K / L</code> 或 <code>小鍵盤 8/4/5/6</code></td>
+                    </tr>
+                    <tr>
+                        <td>衝刺奔跑</td>
+                        <td><code>Shift</code></td>
+                        <td><code>U</code> 或 <code>小鍵盤 0</code></td>
+                    </tr>
+                    <tr>
+                        <td>蓄力射門</td>
+                        <td><code>Space</code> 或 <code>K</code></td>
+                        <td><code>Enter</code> 或 <code>小鍵盤 2</code></td>
+                    </tr>
+                    <tr>
+                        <td>滑鏟搶斷 / 短傳</td>
+                        <td><code>J</code></td>
+                        <td><code>O</code> 或 <code>小鍵盤 1</code></td>
+                    </tr>
+                    <tr>
+                        <td>遊戲暫停</td>
+                        <td><code>Escape</code> 或 <code>P</code></td>
+                        <td><code>Escape</code> 或 <code>P</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="roadmap">
+            <h2>7. 分階段開發與驗收里程碑</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>階段</th>
+                        <th>目標項目</th>
+                        <th>驗收準則</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Phase 1</strong></td>
+                        <td>Django 專案初始化與結構佈署</td>
+                        <td><code>python manage.py runserver</code> 可正常加載頁面框架</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Phase 2</strong></td>
+                        <td>Canvas 2D 球場渲染與足球物理剛體</td>
+                        <td>流暢草皮標線、足球滾動衰減與門柱反彈正常</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Phase 3</strong></td>
+                        <td>球員輸入控制、帶球機制與 AI 門將/防守</td>
+                        <td>玩家能跑動帶球蓄力射門，AI 具備追球攔截與守門能力</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Phase 4</strong></td>
+                        <td>90秒計時賽制、進球判定與 Web Audio 音效</td>
+                        <td>完整閉環球賽體驗，踢球與進球皆有原生合成音效</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Phase 5</strong></td>
+                        <td>慢動作重播、震動打擊感與彩花慶祝</td>
+                        <td>進球瞬間 0.3x 慢動作定格，視覺反饋強烈</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Phase 6</strong></td>
+                        <td>後端 SQLite 戰績持久化與排行榜 AJAX API</td>
+                        <td>比賽結束自動回傳數據並於歷史儀表板正常查詢</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <footer>
+            Soccer Game 足球遊戲系統架構說明書 &copy; 2026 | 設計風格完全對齊 stock_dash
+        </footer>
+    </div>
+</body>
+</html>

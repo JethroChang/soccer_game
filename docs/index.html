@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soccer Game 足球遊戲 - 開發邏輯與系統架構文檔中心</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-primary: #38bdf8;
+            --accent-green: #4ade80;
+            --accent-amber: #fbbf24;
+            --accent-purple: #c084fc;
+            --accent-rose: #f43f5e;
+            --code-bg: #0b1120;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 2.5rem 1.25rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 2rem;
+        }
+
+        header h1 {
+            font-size: 2.4rem;
+            color: var(--accent-primary);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.15rem;
+            max-width: 750px;
+            margin: 0 auto;
+        }
+
+        .badge-list {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background-color: rgba(56, 189, 248, 0.15);
+            color: var(--accent-primary);
+            padding: 0.3rem 0.85rem;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .badge.green {
+            background-color: rgba(74, 222, 128, 0.15);
+            color: var(--accent-green);
+            border-color: rgba(74, 222, 128, 0.3);
+        }
+
+        .badge.amber {
+            background-color: rgba(251, 191, 36, 0.15);
+            color: var(--accent-amber);
+            border-color: rgba(251, 191, 36, 0.3);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 1.75rem;
+            margin-bottom: 3.5rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1.75rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-primary);
+            box-shadow: 0 12px 24px -10px rgba(56, 189, 248, 0.25);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .card-status {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-ready {
+            background-color: rgba(74, 222, 128, 0.2);
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+        }
+
+        .status-dev {
+            background-color: rgba(251, 191, 36, 0.2);
+            color: var(--accent-amber);
+            border: 1px solid var(--accent-amber);
+        }
+
+        .card-desc {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .card-meta {
+            background-color: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+            padding: 0.85rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+        }
+
+        .meta-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.4rem;
+        }
+
+        .meta-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .meta-label {
+            color: var(--text-muted);
+        }
+
+        .meta-val {
+            color: var(--text-main);
+            font-family: monospace;
+            font-weight: 600;
+        }
+
+        .card-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background-color: rgba(56, 189, 248, 0.1);
+            color: var(--accent-primary);
+            text-decoration: none;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        .card-action:hover {
+            background-color: var(--accent-primary);
+            color: #0f172a;
+        }
+
+        .system-info {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .system-info h2 {
+            color: var(--accent-green);
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .system-info ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .system-info li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .system-info li::before {
+            content: "⚽";
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-size: 0.85rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 4rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--card-border);
+            padding-top: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚽ Soccer Game 系統架構與開發邏輯中心</h1>
+            <p>現代化網頁版 2D 足球對戰遊戲 — 基於 Django + 原生 HTML5 Canvas 2D 物理引擎與 Web Audio 原生音效</p>
+            <div class="badge-list">
+                <span class="badge">架構參考 stock_dash</span>
+                <span class="badge green">原生 Canvas 60 FPS</span>
+                <span class="badge amber">Web Audio 原生合成音</span>
+                <span class="badge">Django 後端與 SQLite 戰績</span>
+            </div>
+        </header>
+
+        <main>
+            <div class="grid">
+                <!-- 模組 1: 足球遊戲核心規格與物理引擎 -->
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-title">足球遊戲核心規格 (Gameplay)</span>
+                            <span class="card-status status-ready">規格已就緒</span>
+                        </div>
+                        <p class="card-desc">包含 2D 物理碰撞剛體、草皮摩擦阻尼、球員帶球與蓄力射門、門將防守 AI、賽事 90 秒流程、慢動作重播與音效合成。</p>
+                    </div>
+                    <div>
+                        <div class="card-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">技術核心</span>
+                                <span class="meta-val">HTML5 Canvas + ES6</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">音效系統</span>
+                                <span class="meta-val">Web Audio API</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">對戰模式</span>
+                                <span class="meta-val">PVE (AI) / PVP (同機雙人)</span>
+                            </div>
+                        </div>
+                        <a href="soccer_gameplay/index.html" class="card-action">開啟核心規格文件 &rarr;</a>
+                    </div>
+                </div>
+
+                <!-- 模組 2: 後端架構與戰績 API -->
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-title">Django 網站架構與 API</span>
+                            <span class="card-status status-dev">開發規劃中</span>
+                        </div>
+                        <p class="card-desc">參考 stock_dash 之 mysite 架構，提供比賽結算儲存 API (ajax/save_match/)、排行榜 (ajax/leaderboard/) 與生涯數據統計儀表板。</p>
+                    </div>
+                    <div>
+                        <div class="card-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">後端框架</span>
+                                <span class="meta-val">Python / Django</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">資料庫</span>
+                                <span class="meta-val">SQLite (內建)</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">API 命名規範</span>
+                                <span class="meta-val">ajax/&lt;action&gt;/</span>
+                            </div>
+                        </div>
+                        <a href="soccer_gameplay/index.html#architecture" class="card-action">查看 API 與後端架構 &rarr;</a>
+                    </div>
+                </div>
+            </div>
+
+            <section class="system-info">
+                <h2>系統維護與架構原則 (Alignment with stock_dash)</h2>
+                <ul>
+                    <li><strong>文檔一律強制為 HTML</strong>：所有技術文件均維持深色科技風格，確保在任何瀏覽器中雙擊即可高畫質閱讀。</li>
+                    <li><strong>無臃腫第三方框架</strong>：前端採用純原生 HTML5/Canvas/CSS/JS，杜絕 Node build 耗時與版號衝突，啟動即玩。</li>
+                    <li><strong>模組化代碼組織</strong>：物理引擎 (`physics.js`)、實體 (`player.js`, `ball.js`)、AI 決策 (`bot_ai.js`) 與音訊合成器 (`audio.js`) 相互解耦。</li>
+                    <li><strong>嚴謹自動化驗收</strong>：後端變更執行 `python manage.py check`，並透過單元測試驗收戰績數據正確性。</li>
+                </ul>
+            </section>
+        </main>
+
+        <footer>
+            Soccer Game 專案文檔中心 &copy; 2026 | 設計風格完全對齊 stock_dash
+        </footer>
+    </div>
+</body>
+</html>
