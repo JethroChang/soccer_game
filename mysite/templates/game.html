@@ -94,15 +94,27 @@
     <!-- 底部即時狀態指示條 (衝刺體力條 / 蓄力射門條) -->
     <div class="hud-meters-bar">
         <div class="meter-group">
-            <span class="meter-title">🏃 體力 (Shift)</span>
+            <span class="meter-title" style="color: var(--accent-cyan);">🏃 P1 體力</span>
             <div class="meter-track">
                 <div class="meter-fill-stamina" id="staminaFill"></div>
             </div>
         </div>
         <div class="meter-group">
-            <span class="meter-title">⚡ 射門蓄力</span>
+            <span class="meter-title" style="color: var(--accent-amber);">⚡ P1 蓄力</span>
             <div class="meter-track">
                 <div class="meter-fill-power" id="powerFill"></div>
+            </div>
+        </div>
+        <div class="meter-group" id="p2StaminaGroup" style="display: none;">
+            <span class="meter-title" style="color: var(--accent-rose);">🏃 P2 體力</span>
+            <div class="meter-track">
+                <div class="meter-fill-stamina" id="p2StaminaFill" style="background: linear-gradient(90deg, #be123c 0%, #fb7185 100%); box-shadow: 0 0 8px rgba(244, 63, 94, 0.5);"></div>
+            </div>
+        </div>
+        <div class="meter-group" id="p2PowerGroup" style="display: none;">
+            <span class="meter-title" style="color: var(--accent-amber);">⚡ P2 蓄力</span>
+            <div class="meter-track">
+                <div class="meter-fill-power" id="p2PowerFill"></div>
             </div>
         </div>
     </div>
@@ -139,15 +151,16 @@
         <div>
             <strong>P1 操作：</strong>
             <span class="key-tag">W</span><span class="key-tag">A</span><span class="key-tag">S</span><span class="key-tag">D</span> 移動
-            | <span class="key-tag">Shift</span> 衝刺
-            | <span class="key-tag">Space</span> 或 <span class="key-tag">K</span> 蓄力射門
-            | <span class="key-tag">J</span> 滑鏟截球
+            | <span class="key-tag">左 Shift</span> 衝刺
+            | <span class="key-tag">Space</span> / <span class="key-tag">K</span> / <span class="key-tag">F</span> 蓄力射門
+            | <span class="key-tag">J</span> / <span class="key-tag">G</span> 滑鏟/短傳
         </div>
         <div id="p2HelpText" style="display: none;">
             <strong>P2 操作：</strong>
             <span class="key-tag">方向鍵</span> 移動
-            | <span class="key-tag">Enter</span> 射門
-            | <span class="key-tag">小鍵盤 1</span> 鏟球
+            | <span class="key-tag">右 Shift</span> / <span class="key-tag">小鍵盤 0</span> 衝刺
+            | <span class="key-tag">Enter</span> / <span class="key-tag">.</span> 蓄力射門
+            | <span class="key-tag">,</span> / <span class="key-tag">小鍵盤 1</span> 滑鏟/短傳
         </div>
         <div>
             <span class="key-tag">P</span> / <span class="key-tag">ESC</span> 暫停

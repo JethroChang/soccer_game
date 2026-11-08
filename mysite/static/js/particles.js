@@ -44,22 +44,23 @@ export class ParticleSystem {
     }
   }
 
-  update() {
+  update(timeScale = 1.0) {
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
-      p.life -= p.decay;
+      const scale = p.type === 'confetti' ? 1.0 : timeScale;
+      p.life -= p.decay * scale;
 
       if (p.type === 'confetti') {
-        p.vy += 0.18; // 重力
+        p.vy += 0.18 * scale; // 重力
         p.vx *= 0.98;
-        p.x += p.vx;
-        p.y += p.vy;
-        p.rotation += p.rotSpeed;
+        p.x += p.vx * scale;
+        p.y += p.vy * scale;
+        p.rotation += p.rotSpeed * scale;
       } else if (p.type === 'grass') {
-        p.vx *= 0.92;
-        p.vy *= 0.92;
-        p.x += p.vx;
-        p.y += p.vy;
+        p.vx *= Math.pow(0.92, scale);
+        p.vy *= Math.pow(0.92, scale);
+        p.x += p.vx * scale;
+        p.y += p.vy * scale;
       }
 
       if (p.life <= 0 || p.y > 620) {
