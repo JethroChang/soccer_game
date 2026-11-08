@@ -1,4 +1,4 @@
-import { PITCH, dist } from './physics.js';
+import { PITCH, dist, clamp } from './physics.js';
 
 export class Ball {
   constructor(x = 480, y = 300) {
@@ -22,26 +22,37 @@ export class Ball {
     this.trail = [];
   }
 
-  update(audio) {
+  update(audio, timeScale = 1.0) {
     // 1. 若處於持球狀態，位置由持球球員驅動
     if (this.owner) {
       const offsetDist = 20;
       const targetX = this.owner.x + Math.cos(this.owner.angle) * offsetDist;
       const targetY = this.owner.y + Math.sin(this.owner.angle) * offsetDist;
-      
+
       this.vx = (targetX - this.x) * 0.45;
       this.vy = (targetY - this.y) * 0.45;
-      this.x += this.vx;
-      this.y += this.vy;
-      this.rotation += Math.hypot(this.vx, this.vy) * 0.08;
+      this.x += this.vx * timeScale;
+      this.y += this.vy * timeScale;
+
+      // 確保帶球時足球不會穿出上下邊線或底線牆外
+      this.y = clamp(this.y, PITCH.BOUNDS.TOP + this.radius, PITCH.BOUNDS.BOTTOM - this.radius);
+      const inGoalY = (this.y >= PITCH.GOAL.TOP_Y + this.radius * 0.5 && this.y <= PITCH.GOAL.BOTTOM_Y - this.radius * 0.5);
+      if (!inGoalY) {
+        this.x = clamp(this.x, PITCH.BOUNDS.LEFT + this.radius, PITCH.BOUNDS.RIGHT - this.radius);
+      }
+
+      this.rotation += Math.hypot(this.vx, this.vy) * 0.08 * timeScale;
+      if (this.trail.length > 0) this.trail.shift();
       return;
     }
 
     // 2. 自由運動物理運算
-    this.x += this.vx;
-    this.y += this.vy;
-    this.vx *= PITCH.BALL_FRICTION;
-    this.vy *= PITCH.BALL_FRICTION;
+    const prevX = this.x;
+    this.x += this.vx * timeScale;
+    this.y += this.vy * timeScale;
+    const friction = Math.pow(PITCH.BALL_FRICTION, timeScale);
+    this.vx *= friction;
+    this.vy *= friction;
 
     // 極小速度歸零
     if (Math.hypot(this.vx, this.vy) < 0.05) {
@@ -49,7 +60,7 @@ export class Ball {
       this.vy = 0;
     }
 
-    this.rotation += Math.hypot(this.vx, this.vy) * 0.08;
+    this.rotation += Math.hypot(this.vx, this.vy) * 0.08 * timeScale;
 
     // 速度尾跡紀錄
     const speed = Math.hypot(this.vx, this.vy);
@@ -73,8 +84,10 @@ export class Ball {
 
         // 反射
         const dot = this.vx * nx + this.vy * ny;
-        this.vx = (this.vx - 2 * dot * nx) * PITCH.POST_RESTITUTION;
-        this.vy = (this.vy - 2 * dot * ny) * PITCH.POST_RESTITUTION;
+        if (dot < 0) {
+          this.vx = (this.vx - 2 * dot * nx) * PITCH.POST_RESTITUTION;
+          this.vy = (this.vy - 2 * dot * ny) * PITCH.POST_RESTITUTION;
+        }
 
         if (audio) audio.playPost();
       }
@@ -82,44 +95,68 @@ export class Ball {
 
     // 4. 球網與邊界檢測
     const inGoalY = (this.y >= PITCH.GOAL.TOP_Y && this.y <= PITCH.GOAL.BOTTOM_Y);
+    const wasInLeftGoal = prevX < PITCH.BOUNDS.LEFT;
+    const wasInRightGoal = prevX > PITCH.BOUNDS.RIGHT;
 
-    if (this.x < PITCH.BOUNDS.LEFT) {
-      if (inGoalY) {
+    if (this.x - this.radius < PITCH.BOUNDS.LEFT) {
+      if (inGoalY || wasInLeftGoal) {
         // 進入左球門網內
-        this.vx *= PITCH.NET_DAMPING;
-        this.vy *= PITCH.NET_DAMPING;
-        if (this.x < PITCH.GOAL.LEFT_BACK_X + this.radius) {
-          this.x = PITCH.GOAL.LEFT_BACK_X + this.radius;
-          this.vx = -this.vx * 0.25;
+        if (this.x < PITCH.BOUNDS.LEFT) {
+          const damp = Math.pow(PITCH.NET_DAMPING, timeScale);
+          this.vx *= damp;
+          this.vy *= damp;
+          // 限制在左球門上下邊網內
+          if (this.y - this.radius < PITCH.GOAL.TOP_Y) {
+            this.y = PITCH.GOAL.TOP_Y + this.radius;
+            this.vy = Math.abs(this.vy) * 0.3;
+          } else if (this.y + this.radius > PITCH.GOAL.BOTTOM_Y) {
+            this.y = PITCH.GOAL.BOTTOM_Y - this.radius;
+            this.vy = -Math.abs(this.vy) * 0.3;
+          }
+          if (this.x - this.radius < PITCH.GOAL.LEFT_BACK_X) {
+            this.x = PITCH.GOAL.LEFT_BACK_X + this.radius;
+            this.vx = Math.abs(this.vx) * 0.25;
+          }
         }
       } else {
         // 左底線邊界反彈
         this.x = PITCH.BOUNDS.LEFT + this.radius;
-        this.vx = -this.vx * PITCH.BALL_RESTITUTION;
+        this.vx = Math.abs(this.vx) * PITCH.BALL_RESTITUTION;
       }
-    } else if (this.x > PITCH.BOUNDS.RIGHT) {
-      if (inGoalY) {
+    } else if (this.x + this.radius > PITCH.BOUNDS.RIGHT) {
+      if (inGoalY || wasInRightGoal) {
         // 進入右球門網內
-        this.vx *= PITCH.NET_DAMPING;
-        this.vy *= PITCH.NET_DAMPING;
-        if (this.x > PITCH.GOAL.RIGHT_BACK_X - this.radius) {
-          this.x = PITCH.GOAL.RIGHT_BACK_X - this.radius;
-          this.vx = -this.vx * 0.25;
+        if (this.x > PITCH.BOUNDS.RIGHT) {
+          const damp = Math.pow(PITCH.NET_DAMPING, timeScale);
+          this.vx *= damp;
+          this.vy *= damp;
+          // 限制在右球門上下邊網內
+          if (this.y - this.radius < PITCH.GOAL.TOP_Y) {
+            this.y = PITCH.GOAL.TOP_Y + this.radius;
+            this.vy = Math.abs(this.vy) * 0.3;
+          } else if (this.y + this.radius > PITCH.GOAL.BOTTOM_Y) {
+            this.y = PITCH.GOAL.BOTTOM_Y - this.radius;
+            this.vy = -Math.abs(this.vy) * 0.3;
+          }
+          if (this.x + this.radius > PITCH.GOAL.RIGHT_BACK_X) {
+            this.x = PITCH.GOAL.RIGHT_BACK_X - this.radius;
+            this.vx = -Math.abs(this.vx) * 0.25;
+          }
         }
       } else {
         // 右底線邊界反彈
         this.x = PITCH.BOUNDS.RIGHT - this.radius;
-        this.vx = -this.vx * PITCH.BALL_RESTITUTION;
+        this.vx = -Math.abs(this.vx) * PITCH.BALL_RESTITUTION;
       }
     }
 
     // 上下邊線反彈
     if (this.y - this.radius < PITCH.BOUNDS.TOP) {
       this.y = PITCH.BOUNDS.TOP + this.radius;
-      this.vy = -this.vy * PITCH.BALL_RESTITUTION;
+      this.vy = Math.abs(this.vy) * PITCH.BALL_RESTITUTION;
     } else if (this.y + this.radius > PITCH.BOUNDS.BOTTOM) {
       this.y = PITCH.BOUNDS.BOTTOM - this.radius;
-      this.vy = -this.vy * PITCH.BALL_RESTITUTION;
+      this.vy = -Math.abs(this.vy) * PITCH.BALL_RESTITUTION;
     }
   }
 

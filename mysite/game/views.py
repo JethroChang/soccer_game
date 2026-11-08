@@ -60,7 +60,7 @@ def ajax_save_match(request):
             duration_seconds=duration_seconds,
         )
 
-        # 2. 更新或建立生涯排行
+        # 2. 更新或建立主隊玩家 (Player 1) 生涯排行
         entry, _ = LeaderboardEntry.objects.get_or_create(player_name=player_name)
         entry.total_matches += 1
         entry.total_goals_scored += player_score
@@ -79,6 +79,25 @@ def ajax_save_match(request):
             # 平局不中斷連勝，亦不增加
 
         entry.save()
+
+        # 3. 若為雙人同機 (2P) 模式，同步更新 Player 2 生涯排行
+        if game_mode == '2P':
+            p2_name = str(data.get('opponent_name', 'Player 2')).strip() or 'Player 2'
+            p2_entry, _ = LeaderboardEntry.objects.get_or_create(player_name=p2_name)
+            p2_entry.total_matches += 1
+            p2_entry.total_goals_scored += opponent_score
+            p2_entry.total_goals_conceded += player_score
+            if result == 'LOSS':  # 主隊 LOSS 即 P2 獲勝
+                p2_entry.wins += 1
+                p2_entry.current_win_streak += 1
+                if p2_entry.current_win_streak > p2_entry.highest_win_streak:
+                    p2_entry.highest_win_streak = p2_entry.current_win_streak
+            elif result == 'WIN':
+                p2_entry.losses += 1
+                p2_entry.current_win_streak = 0
+            else:
+                p2_entry.draws += 1
+            p2_entry.save()
 
         return JsonResponse({
             'status': 'success',

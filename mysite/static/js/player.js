@@ -9,8 +9,8 @@ export class Player {
     this.vx = 0;
     this.vy = 0;
     this.radius = 17;
-    this.angle = config.angle || 0;
     this.team = config.team || 'HOME'; // 'HOME' (Blue) or 'AWAY' (Red)
+    this.angle = (config.angle !== undefined) ? config.angle : (this.team === 'HOME' ? 0 : Math.PI);
     this.role = config.role || 'OUTFIELD'; // 'OUTFIELD' or 'GOALKEEPER'
     this.number = config.number || (this.role === 'GOALKEEPER' ? '1' : (this.team === 'HOME' ? '10' : '7'));
     this.name = config.name || (this.team === 'HOME' ? 'Player 1' : 'AI Bot');
@@ -29,7 +29,9 @@ export class Player {
     // 滑鏟搶斷狀態
     this.isTackling = false;
     this.tackleTimer = 0;
+    this.tackleCooldown = 0;
     this.possessionCooldown = 0; // 被搶斷後的免控硬直倒數
+    this.stealProtection = 0;    // 剛取得球權時的短暫保護倒數
 
     // 外觀顏色配置
     if (this.role === 'GOALKEEPER') {
@@ -48,45 +50,56 @@ export class Player {
     this.vy = 0;
     this.angle = this.team === 'HOME' ? 0 : Math.PI;
     this.stamina = 100;
+    this.isSprinting = false;
     this.isCharging = false;
     this.chargePower = 0;
     this.isTackling = false;
     this.tackleTimer = 0;
+    this.tackleCooldown = 0;
     this.possessionCooldown = 0;
+    this.stealProtection = 0;
   }
 
-  update() {
-    // 1. 硬直倒數
+  update(timeScale = 1.0) {
+    // 1. 冷卻與硬直倒數
     if (this.possessionCooldown > 0) {
-      this.possessionCooldown--;
+      this.possessionCooldown = Math.max(0, this.possessionCooldown - timeScale);
+    }
+    if (this.stealProtection > 0) {
+      this.stealProtection = Math.max(0, this.stealProtection - timeScale);
+    }
+    if (this.tackleCooldown > 0) {
+      this.tackleCooldown = Math.max(0, this.tackleCooldown - timeScale);
     }
 
     // 2. 滑鏟處理
     if (this.isTackling) {
-      this.tackleTimer--;
-      this.x += this.vx;
-      this.y += this.vy;
-      this.vx *= 0.92;
-      this.vy *= 0.92;
+      this.tackleTimer -= timeScale;
+      this.x += this.vx * timeScale;
+      this.y += this.vy * timeScale;
+      const drag = Math.pow(0.92, timeScale);
+      this.vx *= drag;
+      this.vy *= drag;
       if (this.tackleTimer <= 0) {
         this.isTackling = false;
       }
     } else {
       // 正常移動位移與摩擦衰減
-      this.x += this.vx;
-      this.y += this.vy;
-      this.vx *= 0.82;
-      this.vy *= 0.82;
+      this.x += this.vx * timeScale;
+      this.y += this.vy * timeScale;
+      const drag = Math.pow(0.82, timeScale);
+      this.vx *= drag;
+      this.vy *= drag;
 
       // 體力自動回充
       if (!this.isSprinting && this.stamina < this.maxStamina) {
-        this.stamina = Math.min(this.maxStamina, this.stamina + 0.35);
+        this.stamina = Math.min(this.maxStamina, this.stamina + 0.35 * timeScale);
       }
     }
 
     // 3. 射門蓄力自增
     if (this.isCharging) {
-      this.chargePower = Math.min(1.0, this.chargePower + 0.035);
+      this.chargePower = Math.min(1.0, this.chargePower + 0.035 * timeScale);
     }
 
     // 4. 球場邊界約束
@@ -105,16 +118,16 @@ export class Player {
     }
   }
 
-  move(dx, dy, sprint = false) {
+  move(dx, dy, sprint = false, speedMult = 1.0) {
     if (this.isTackling) return;
 
     if (dx !== 0 || dy !== 0) {
       this.angle = Math.atan2(dy, dx);
-      let currentSpeed = this.baseSpeed;
+      let currentSpeed = this.baseSpeed * speedMult;
 
       if (sprint && this.stamina > 5) {
         this.isSprinting = true;
-        currentSpeed = this.sprintSpeed;
+        currentSpeed = this.sprintSpeed * speedMult;
         this.stamina = Math.max(0, this.stamina - 0.7);
       } else {
         this.isSprinting = false;
@@ -135,17 +148,27 @@ export class Player {
     }
   }
 
+  isShotOnTarget(ball) {
+    const targetGoalX = this.team === 'HOME' ? PITCH.GOAL.RIGHT_X : PITCH.GOAL.LEFT_X;
+    const dx = targetGoalX - ball.x;
+    if (dx * ball.vx <= 0 || Math.abs(ball.vx) < 0.5) return false;
+    const t = dx / ball.vx;
+    if (t < 0 || t > 140) return false;
+    const projectedY = ball.y + ball.vy * t;
+    return projectedY >= (PITCH.GOAL.TOP_Y - 12) && projectedY <= (PITCH.GOAL.BOTTOM_Y + 12);
+  }
+
   releaseShot(ball, audio, particles) {
-    if (!this.isCharging) return;
+    if (!this.isCharging) return { shotTaken: false, onTarget: false };
     const power = this.chargePower;
     this.isCharging = false;
     this.chargePower = 0;
 
-    // 只有在球在自己腳下時才能踢球
-    if (ball.owner === this || dist(this.x, this.y, ball.x, ball.y) <= 30) {
+    // 只有在球在自己腳下或觸球範圍內時才能踢球
+    if (ball.owner === this || (!ball.owner && dist(this.x, this.y, ball.x, ball.y) <= 32)) {
       ball.owner = null;
       ball.lastTouchTeam = this.team;
-      this.possessionCooldown = 15; // 踢球後短暫不吸附
+      this.possessionCooldown = 16; // 踢球後短暫不吸附
 
       const shotSpeed = 8.5 + power * 10.5;
       ball.vx = Math.cos(this.angle) * shotSpeed;
@@ -153,13 +176,38 @@ export class Player {
 
       if (audio) audio.playKick(power);
       if (particles) particles.spawnTurfKick(ball.x, ball.y, ball.vx, ball.vy, 10);
+
+      return { shotTaken: true, onTarget: this.isShotOnTarget(ball) };
     }
+    return { shotTaken: false, onTarget: false };
   }
 
-  tackle(audio, particles) {
-    if (this.isTackling || this.stamina < 15) return;
+  tackle(ball, audio, particles) {
+    // 若當前正持球，按搶斷/短傳鍵改為快速輕踢出腳（短傳/推射），不觸發滑鏟自摔
+    if (ball && ball.owner === this) {
+      this.isCharging = false;
+      this.chargePower = 0;
+      ball.owner = null;
+      ball.lastTouchTeam = this.team;
+      this.possessionCooldown = 14;
+
+      const passSpeed = 9.0;
+      ball.vx = Math.cos(this.angle) * passSpeed;
+      ball.vy = Math.sin(this.angle) * passSpeed;
+
+      if (audio) audio.playKick(0.35);
+      if (particles) particles.spawnTurfKick(ball.x, ball.y, ball.vx, ball.vy, 6);
+      return { shotTaken: true, onTarget: this.isShotOnTarget(ball) };
+    }
+
+    if (this.isTackling || this.tackleCooldown > 0 || this.stamina < 15) {
+      return { shotTaken: false, onTarget: false };
+    }
+    this.isCharging = false;
+    this.chargePower = 0;
     this.isTackling = true;
     this.tackleTimer = 16;
+    this.tackleCooldown = 28;
     this.stamina -= 15;
 
     const tackleSpeed = 7.2;
@@ -168,6 +216,7 @@ export class Player {
 
     if (audio) audio.playTackle();
     if (particles) particles.spawnTurfKick(this.x, this.y, this.vx, this.vy, 12);
+    return { shotTaken: false, onTarget: false };
   }
 
   draw(ctx) {

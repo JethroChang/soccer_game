@@ -106,7 +106,8 @@ export class AudioEngine {
     lfo.type = 'sine';
     lfo.frequency.setValueAtTime(35, t);
     lfoGain.gain.setValueAtTime(120, t);
-    lfo.connect(osc.frequency);
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc.frequency);
 
     gain.gain.setValueAtTime(0.001, t);
     gain.gain.linearRampToValueAtTime(0.4, t + 0.04);

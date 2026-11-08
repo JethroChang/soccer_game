@@ -100,3 +100,38 @@ class SoccerGameTests(TestCase):
         stats_data = res_stats.json()
         self.assertEqual(stats_data['status'], 'success')
         self.assertEqual(stats_data['stats']['wins'], 8)
+
+    def test_2p_mode_updates_both_players_leaderboard(self):
+        """測試雙人同機 (2P) 模式結算時同時更新 Player 1 與 Player 2 排行榜"""
+        payload = {
+            'player_score': 1,
+            'opponent_score': 3,
+            'result': 'LOSS',
+            'difficulty': 'MEDIUM',
+            'game_mode': '2P',
+            'shots_taken': 4,
+            'shots_on_target': 2,
+            'possession_rate': 45.0,
+            'duration_seconds': 90,
+            'player_name': 'Player 1',
+            'opponent_name': 'Player 2',
+        }
+        response = self.client.post(
+            reverse('game.ajax.save_match'),
+            data=json.dumps(payload),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+
+        p1 = LeaderboardEntry.objects.get(player_name='Player 1')
+        p2 = LeaderboardEntry.objects.get(player_name='Player 2')
+        self.assertEqual(p1.losses, 1)
+        self.assertEqual(p2.wins, 1)
+        self.assertEqual(p2.total_goals_scored, 3)
+
+    def test_docs_static_route_serves_html(self):
+        """測試導覽列之 /docs/index.html 文檔中心路由正常回應 200"""
+        res_doc = self.client.get('/docs/index.html')
+        self.assertEqual(res_doc.status_code, 200)
+        res_sub = self.client.get('/docs/soccer_gameplay/index.html')
+        self.assertEqual(res_sub.status_code, 200)
